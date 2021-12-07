@@ -168,10 +168,20 @@ def move(master,role,direct,result):
 #代号，名字，宽度，高度，左上角行位置，左上角列位置
 
 #打印可移动的方向
+    prtstr=""
     for yy in range(len(direct)):
-        print(yy,direct[yy],end=' ')
+#        print(yy,direct[yy],end='   ')
+        prtstr=prtstr+str(yy)+"-"+direct[yy]
+        if(yy != len(direct)-1):
+            prtstr=prtstr+","
+        else:
+            prtstr=prtstr+",x to exit):"
     if len(direct) >= 2:
-        direct = direct[int(input("\n please choose direct"))]
+        inputx=input("\n please choose direct("+prtstr)
+        if(inputx=='x' or inputx=='X'):
+            exit
+        else:
+            direct = direct[int(inputx)]
     else:
         direct = direct[0]
 
@@ -200,11 +210,11 @@ def check_win(role):
 result=updatelocation(role)
 prtresult(result)
 while True:
-    print('\n'*3)
+    print('\n')
     result=updatelocation(role)
     prtresult(result)
     print("\n\n")
-    select = input('choose a item to move')
+    select = input('choose a item to move，x to exit: ')
     if(select in "0123456789"):
        direct = move_judge(int(select),role,result)
        if(direct!=[]):
@@ -213,7 +223,7 @@ while True:
                 print("\n Congratulations! You Win!")
                 break
        else:
-           print("cannot move, please choose again")
+           print("\n cannot move, please choose again")
     elif (select =='x'):
         print('good bye')
         break
