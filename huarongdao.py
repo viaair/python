@@ -1,24 +1,43 @@
 #!python
 import copy
 
+##Author: Lijun 
 #
-#Guanyu=11 (*1)
+#History:
+#V0.1   2021-12-15
+#实现基础功能：一种初始化图形，可以人工操作游戏，游戏成功有提示
+#
+#
+#
+#
+#Guanyu=11 (*1) ;关羽2*1（水平*竖直，下同) 横条，1个
 #zhang/zhao/ma/huang = x
-#                      x   (*4,2-5)
-#zu = x (*4,6-9)
+#                      x   (*4,2-5) ;张飞/赵云/马超/黄忠 1*2竖条，4个 
+#zu = x (*4,6-9)    ;小卒， 1*1块，4个
 #caocao = 00
-#         00 (*1)
+#         00 (*1)   ;曹操，2*2块，1个
+#
 #
 #数据结构：
+#
 #role[id,name,width,height,loc_row,loc_col]
-#代号，名字，宽度，高度，左上角行位置，左上角列位置
+#代号，名字，水平宽度，竖直高度，左上角行位置，左上角列位置
 #
 #result[row][col]
 #各行各列的角色
 #
+#
+#
 #初始化角色位置
+#1、初始地图“横刀立马”
+#张曹曹马
+#飞操操超
+#赵关羽黄
+#云卒卒忠
+#卒    卒
+#口门门口
 role = []
-role.append(['0','caocao',2,2,1,2])
+role.append(['0','Caocao',2,2,1,2])
 role.append(['1','Guanyu',2,1,3,2])
 role.append(['2','Zhangfei',1,2,1,1])
 role.append(['3','Zhaoyun',1,2,3,1])
@@ -214,7 +233,7 @@ while True:
     result=updatelocation(role)
     prtresult(result)
     print("\n\n")
-    select = input('choose a item to move，x to exit: ')
+    select = input('Target: Move Caocao--0000--block to exit\n Choose a item to move，x to exit: ')
     if(select in "0123456789"):
        direct = move_judge(int(select),role,result)
        if(direct!=[]):
