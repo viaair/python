@@ -1,11 +1,9 @@
 #!python
 import copy
 
-##Author: Lijun 
+##Author: Lijun
 #
 #History:
-#V0.4   2022-01-05
-#增加功能：1）在运行过程中增加“自动完成”功能，自动模拟完成操作。
 #
 #V0.3   2021-12-18
 #增加功能：增加初始场景，游戏可以从多个初始场景中选择1个。
@@ -20,7 +18,7 @@ import copy
 #
 #Guanyu=11 (*1) ;关羽2*1（水平*竖直，下同) 横条，1个
 #zhang/zhao/ma/huang = x
-#                      x   (*4,2-5) ;张飞/赵云/马超/黄忠 1*2竖条，4个 
+#                      x   (*4,2-5) ;张飞/赵云/马超/黄忠 1*2竖条，4个
 #zu = x (*4,6-9)    ;小卒， 1*1块，4个
 #caocao = 00
 #         00 (*1)   ;曹操，2*2块，1个
@@ -37,22 +35,9 @@ import copy
 #
 #
 #初始化角色位置
+history=[]
+role = []
 
-
-#初始化游戏设置
-def init_conf():
-    global role
-    global history 
-    global auto_play
-    global opened
-    global closed
-    role = []        #角色清单，用于保存各角色属性（长宽、位置等）
-    history=[]       #历史角色清单的历史动作列表，用于游戏返回上一步
-    auto_play=False  #设置是否自动游戏，如果自动，则会使用opened表、closed表
-    opened=[]
-    closed=[]
-
-#初始化游戏地图，设定各角色的位置。
 def init_map():
     while True:
         map = input('''Welcome to HuaRongDao, Please choose a map to play:
@@ -186,7 +171,7 @@ def init_map():
         else:
             print("\nWrong selection!")
 
-#根据地图位置更新各角色站位结果
+#根据位置更新站位结果
 def updatelocation(role):    
     result = [['x' for i in range(5)] for j in range(7)]
     result[6][1]=' '
@@ -203,7 +188,7 @@ def updatelocation(role):
             row = row +1
     return(result)
 
-#打印各角色站位结果
+#打印站位结果
 def prtresult(result):
     print("\n")
     for row in range(1,7):
@@ -228,23 +213,20 @@ def prtresult(result):
 #获取移动角色的左上角初始位置，以及宽度、高度
 #代号，名字，宽度，高度，左上角行位置，左上角列位置
 def move_judge(master,role,result):
-#获取各角色的xy坐标、以及宽度、高度
     pos_row=role[master][4]
     pos_col=role[master][5]
     pos_row_cnt=role[master][2]
     pos_col_cnt=role[master][3]
 
-#初始化角色可以移动方向的结果
+#初始化结果
     direct=[]
     
 #判断是否能向左移动
     left_flag='F'
-#第一列的不能左移
     if(pos_col<=1):
         pass
 #        print('不能向左移动')
     else:
-#只有当左边列、与角色相同高度行的所有格子都是x时才可以左移
         for row in range(pos_col_cnt):
             if(result[pos_row+row][pos_col-1]=='x'):
                 pass
@@ -259,12 +241,10 @@ def move_judge(master,role,result):
 
 #判断是否能向右移动
     right_flag='F'
-#角色的当前x坐标加上宽度大于4则不能右移
     if(pos_col+pos_row_cnt>4):
         pass
 #        print('不能向右移动')
     else:
-#只有当右边列、与角色相同高度行的所有格子都是x时才可以右移
         for row in range(pos_col_cnt):
             if(result[pos_row+row][pos_col+pos_row_cnt]=='x'):
                 pass
@@ -279,12 +259,10 @@ def move_judge(master,role,result):
 
 #判断是否能向上移动
     up_flag='F'
-#第一行的不能上移
     if(pos_row<=1):
         pass
 #        print('不能向上移动')
     else:
-#只有当上边行、与角色相同高度列的所有格子都是x时才可以上移
         for col in range(pos_row_cnt):
             if(result[pos_row-1][pos_col+col]=='x'):
                 pass
@@ -299,12 +277,10 @@ def move_judge(master,role,result):
 
 #判断是否能向下移动
     down_flag='F'
-#角色的当前y坐标加上高度大于6则不能下移
     if(pos_row+pos_col_cnt>6):
         pass
 #        print('不能向下移动')
     else:
-#只有当下边行、与角色相同高度列的所有格子都是x时才可以下移
         for col in range(pos_row_cnt):
             if(result[pos_row+pos_col_cnt][pos_col+col]=='x'):
                 down_flag='T'
@@ -366,13 +342,10 @@ def check_win(role):
     if(role[0][4]==5 and role[0][5]==2):
         return("Success!")
 
-
-
 #主程序    
 #result=updatelocation(role)
 #prtresult(result)
 print('\n')
-init_conf()
 init_map()
 while True:
     history.append(copy.deepcopy(role))

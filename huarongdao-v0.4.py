@@ -44,13 +44,12 @@ def init_conf():
     global role
     global history 
     global auto_play
-    global opened
-    global closed
+        
     role = []        #角色清单，用于保存各角色属性（长宽、位置等）
     history=[]       #历史角色清单的历史动作列表，用于游戏返回上一步
-    auto_play=False  #设置是否自动游戏，如果自动，则会使用opened表、closed表
-    opened=[]
-    closed=[]
+    orig=[]          #自动游戏时的初始局面
+#    auto_play=False  #设置是否自动游戏，如果自动，则会使用opened表、closed表
+
 
 #初始化游戏地图，设定各角色的位置。
 def init_map():
@@ -354,7 +353,49 @@ def move(master,role,direct,result):
         role[master][4]=role[master][4]+1
     print(role)
     return(role)
+
+def move_mult(posit):
+#用于自动化情况下,从过一种局面产生该局面下可移动角色变成的几种后续局面
+#输入是open表中的一个数据，如下，
+#[当前role，前一role，移动角色，移动方向，当前局面nodeid，前一局面nodeid]
+#输出数据结构也是上面结构形成的list，list的任一元素也即open表的数据元素形式：
+#其中role局面的数据结构：
+#role[id,name,width,height,loc_row,loc_col]
+#代号，名字，宽度，高度，左上角行位置，左上角列位置
+#id范围0-9分别代表各种角色
+
+#0、初始化
+    this_role = posit[0]  #当前局面
+    this_nodeid = posit[3]  #当前局面nodeid
+    next_role_list=[]
+    global max_nodeid
+    global open
     
+#1、检查各角色哪些可以移动，分别向什么方向移动
+    for x in range(0,10):
+        all_direct=move_judge(x,this_role,result)
+        if(len(all_direct)<1):
+           pass
+
+#2、如果可以移动，则执行移动，并生成所有新局面列表
+        else:
+           for direct in range(len(all_direct)):
+               next_role = copy.deepcopy(this_role)
+               max_nodeid = max_nodeid + 1
+               if (direct == 'left'):
+                   next_role[master][5]=next_role[master][5]-1
+               if (direct == 'right'):
+                   next_role[master][5]=next_role[master][5]+1
+               if (direct == 'up'):
+                   next_role[master][4]=next_role[master][4]-1
+               if (direct == 'down'):
+                   next_role[master][4]=next_role[master][4]+1
+               next_role_list.append([next_role, this_role, x, direct, max_nodeid, this_nodeid])
+               print('新增节点',next_role, this_role, x, direct, max_nodeid, this_nodeid)
+                     
+#3、返回当前局面所有下一条局面清单
+    return(next_role_list)   
+
 '''
 for i in range(10):
     x=move_judge(i,role,result)
@@ -366,7 +407,93 @@ def check_win(role):
     if(role[0][4]==5 and role[0][5]==2):
         return("Success!")
 
+def autoplay(role):
+    global max_nodeid
+    max_nodeid = 1
+    global opened
+    global closed
+    opened=[]
+    closed=[]
+    opened.append([copy.deepcopy(role),'NULL','','',1,0])
+    handleOpen()
 
+#用于处理Open表
+#方法是：如果Open表非空，则：
+#1）按照顺序对open表的每个角色进行所有方向的移动，
+#将移动后的新状态节点添加进open表；如果过程中找到了满足条件
+#的目的状态节点，则停止处理并返回打印结果；
+#如果新获得的序列已存在与open、close表，则不再添加。
+#2）将该节点加入close表；
+#3）从open表中删除该节点；
+#
+#open表格式：当前role、前一role、当前nodeie、
+def handleOpen():
+    global opened
+    global closed
+    while True:
+        if len(opened)==0:
+                break
+#       x=0
+        for x in range(len(opened)):
+          this_node = opened[x]
+          tmp = move_mult(this_node)
+#          print(tmp)
+#          print(open)
+#          print('tmp length is',len(tmp))
+          for y in range(len(tmp)):
+                  flag=False
+                  for jj in range(len(opened)):
+#                        print('tmp[y][0]is',tmp[y][0])
+#                        print('opened[x][0]is',opened[x][0])
+                        if tmp[y][0]==opened[jj][0]:
+                                flag=True
+#                                print('falg open set to True')
+                  for kk in range(len(closed)):
+#                         print('tmp[',y,'][0]is',tmp[y][0])
+#                         print('closed[',kk,'][0]is',closed[kk][0])
+                         if tmp[y][0]==closed[kk][0]:
+                                flag=True
+#                                print('falg close set to True')
+                  if flag==False:
+                      open.append(tmp[y])
+#                        print('add open node',opened[-1])
+#                  else:
+#                        print('node',tmp[y][0], 'already exists in open or closed!')
+
+#检查是否成功
+                  if(check_win(tmp[y])=="Success!"):
+                    closed.append(opened[x])
+                    closed.append(opened[-1])
+                    opened.remove(opened[x])
+#                    print('add close node',opened[x])
+                    print('Totally',max_nodeid,'nodes ayalyzed,find the result.')
+                    prtResult()
+                    print('Success!')
+                    exit("We find it!")
+          closed.append(opened[x])
+#          print('add close node',opened[x])
+          opened.remove(opened[x])
+
+
+#打印结果，方法是从close表最后一条开始，查找其前一个节点，
+#直到前一节点为0，并将所有查到的序列写入step，打印出step
+#即得到所有的变化过程。
+def prtResult():
+      step=[closed[-1]]
+      nodePrt=closed[-1][4]
+      while True:
+            for x in range(len(closed)):
+                  if nodePrt==closed[x][3]:
+                        step.insert(0,closed[x])
+                        nodePrt=closed[x][4]
+            if nodePrt==0:
+                  break            
+      for x in range(len(step)):
+            print('Step',x,':')
+            prtNum(step[x][0])
+      print('Finished!')
+      time.sleep(10)
+  
 
 #主程序    
 #result=updatelocation(role)
@@ -380,9 +507,9 @@ while True:
     prtresult(result)
     print("\n\n")
     if(len(history)>1):
-        select = input('Target: Move Caocao--0000--block to exit\n Choose an item to move，x to exit, b to back: ')
+        select = input('Target: Move Caocao--0000--block to exit\n Choose an item to move，x to exit, b to back, a to autoplay: ')
     else:
-        select = input('Target: Move Caocao--0000--block to exit\n Choose an item to move，x to exit')
+        select = input('Target: Move Caocao--0000--block to exit\n Choose an item to move，x to exit, a to autoplay: ')
     if(select=='b' or select=='B'):
         if(len(history)>1):
             print('before:',history)
@@ -402,6 +529,10 @@ while True:
                 break
        else:
            print("\n cannot move, please choose again")
+    elif(select=='a' or select=='A'):
+        auto_play=True
+        autoplay(role)
+        break
     elif (select =='x' or select=='X'):
         print('good bye')
         break

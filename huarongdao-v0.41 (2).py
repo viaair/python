@@ -44,13 +44,12 @@ def init_conf():
     global role
     global history 
     global auto_play
-    global opened
-    global closed
+        
     role = []        #角色清单，用于保存各角色属性（长宽、位置等）
     history=[]       #历史角色清单的历史动作列表，用于游戏返回上一步
-    auto_play=False  #设置是否自动游戏，如果自动，则会使用opened表、closed表
-    opened=[]
-    closed=[]
+    orig=[]          #自动游戏时的初始局面
+#    auto_play=False  #设置是否自动游戏，如果自动，则会使用openeded表、closed表
+
 
 #初始化游戏地图，设定各角色的位置。
 def init_map():
@@ -204,11 +203,11 @@ def updatelocation(role):
     return(result)
 
 #打印各角色站位结果
-def prtresult(result):
+def prtresult(resultx):
     print("\n")
     for row in range(1,7):
         for col in range(1,5):
-            print(result[row][col],end="")
+            print(resultx[row][col],end="")
         print('')
 
 '''def prtmenu():
@@ -227,12 +226,16 @@ def prtresult(result):
 #判断是否可以移动,返回可以移动的方向left，right，up，down
 #获取移动角色的左上角初始位置，以及宽度、高度
 #代号，名字，宽度，高度，左上角行位置，左上角列位置
-def move_judge(master,role,result):
+def move_judge(master,rolex):
 #获取各角色的xy坐标、以及宽度、高度
-    pos_row=role[master][4]
-    pos_col=role[master][5]
-    pos_row_cnt=role[master][2]
-    pos_col_cnt=role[master][3]
+    pos_row=rolex[master][4]
+    pos_col=rolex[master][5]
+    pos_row_cnt=rolex[master][2]
+    pos_col_cnt=rolex[master][3]
+
+#更新节点位置
+    result=updatelocation(rolex)
+#    prtresult(result)
 
 #初始化角色可以移动方向的结果
     direct=[]
@@ -253,7 +256,7 @@ def move_judge(master,role,result):
                 left_flag='F'
                 break
     if(left_flag=='T'):
-        print("can move left!")
+#        print(master, "can move left!")
         direct.append("left")
 #        return("left")
 
@@ -273,7 +276,7 @@ def move_judge(master,role,result):
                 right_flag='F'
                 break
     if(right_flag=='T'):
-        print("can move right!")
+#        print(master,"can move right!")
         direct.append("right")
 #        return("right")
 
@@ -293,7 +296,7 @@ def move_judge(master,role,result):
                 up_flag='F'
                 break
     if(up_flag=='T'):
-        print("can move up!")
+#        print(master,"can move up!")
         direct.append("up")
 #        return("up")
 
@@ -312,12 +315,16 @@ def move_judge(master,role,result):
                 down_flag='F'
                 break
     if(down_flag=='T'):
-        print("can move down!")
+#        print(master,"can move down!")
         direct.append("down")
+        
+#    if(len(direct)>0):
+#        print('this time:',master,'can move',direct)
     return(direct)
 
+
 #移动
-def move(master,role,direct,result):
+def move(master,rolex,direct,result):
 #    print("Move"+ str(master))
 #    pass
 #数据结构：
@@ -343,21 +350,66 @@ def move(master,role,direct,result):
     else:
         direct = direct[0]
 
-    last_role=role
+    last_role=copy.deepcopy(role)
     if (direct == 'left'):
-        role[master][5]=role[master][5]-1
+        last_role[master][5]=role[master][5]-1
     if (direct == 'right'):
-        role[master][5]=role[master][5]+1
+        last_role[master][5]=role[master][5]+1
     if (direct == 'up'):
-        role[master][4]=role[master][4]-1
+        last_role[master][4]=role[master][4]-1
     if (direct == 'down'):
-        role[master][4]=role[master][4]+1
-    print(role)
-    return(role)
+        last_role[master][4]=role[master][4]+1
+    print(last_role)
+    return(last_role)
+
+def move_mult(posit):
+#用于自动化情况下,从过一种局面产生该局面下可移动角色变成的几种后续局面
+#输入是opened表中的一个数据，如下，
+#[当前role，前一role，移动角色，移动方向，当前局面nodeid，前一局面nodeid]
+#输出数据结构也是上面结构形成的list，list的任一元素也即opened表的数据元素形式：
+#其中role局面的数据结构：
+#role[id,name,width,height,loc_row,loc_col]
+#代号，名字，宽度，高度，左上角行位置，左上角列位置
+#id范围0-9分别代表各种角色
+
+#0、初始化
+    global opened
+    global closeed
+    next_role_list=[]
+    this_role = copy.deepcopy(posit[0])  #当前局面
+    this_nodeid = posit[4]  #当前局面nodeid
     
+#1、检查各角色哪些可以移动，分别向什么方向移动
+    for x in range(0,10):
+        all_direct=move_judge(x,this_role)
+        if(len(all_direct)<1):
+           pass
+
+#2、如果可以移动，则执行移动，并生成所有新局面列表
+        else:
+           for y in range(len(all_direct)):
+               next_role = copy.deepcopy(this_role)
+               direct = all_direct[y]
+               if (direct == 'left'):
+                   next_role[x][5]=next_role[x][5]-1
+               if (direct == 'right'):
+                   next_role[x][5]=next_role[x][5]+1
+               if (direct == 'up'):
+                   next_role[x][4]=next_role[x][4]-1
+               if (direct == 'down'):
+                   next_role[x][4]=next_role[x][4]+1
+               next_role_list.append([next_role, this_role, x, direct, '', this_nodeid])
+               
+                     
+#3、返回当前局面所有下一条局面清单
+#    print('next_role_list:')
+#    for x in range(len(next_role_list)):
+#        print(next_role_list[x])
+    return(next_role_list)   
+
 '''
 for i in range(10):
-    x=move_judge(i,role,result)
+    x=move_judge(i,role)
     print(x)
 
 '''
@@ -366,7 +418,136 @@ def check_win(role):
     if(role[0][4]==5 and role[0][5]==2):
         return("Success!")
 
+def check_match(orig,dest):
+#作用：比较两种局型是否一致，包括6/7/8/9的位置，如果0-5位置相同，且6/7/8/9的组合位置相同，也认为两个局型一致，返回True。
+#orig,dest的结构即role的结构
+#如果orig与dest的0-5相同，但orig的6/7位置与dest8/9位置对调，也认为orig与dest相同。
+    if(orig == dest):
+        return True
+    else:
+        return False
+    
+def autoplay(role):
+    global max_nodeid
+    max_nodeid = 1
+    global opened
+    global closed
+    opened =[]
+    closed=[]
+    opened.append([copy.deepcopy(role),'NULL','','',1,0])
+    handleOpen()
 
+#用于处理Open表
+#方法是：如果Open表非空，则：
+#1）按照顺序对open表的每个角色进行所有方向的移动，
+#将移动后的新状态节点添加进open表；如果过程中找到了满足条件
+#的目的状态节点，则停止处理并返回打印结果；
+#如果新获得的序列已存在与open、close表，则不再添加。
+#2）将该节点加入close表；
+#3）从open表中删除该节点；
+#
+#open表格式：当前role，前一role，移动角色，移动方向，当前局面nodeid，前一局面nodeid
+def handleOpen():
+    global opened
+    global closed
+    global max_nodeid
+    
+    while True:
+        if len(opened)==0:
+                break
+#        x=0
+        for x in range(len(opened)):
+#          print('opened updated, now is node No.:', opened[x][5])
+#打印当前处理的node形状
+#          result=updatelocation(opened[x][0])
+#          prtresult(result)
+          this_node = copy.deepcopy(opened[x])
+          tmp = move_mult(this_node)
+#          print(tmp)
+#          print(opened)
+#          print('tmp length is',len(tmp))
+          for y in range(len(tmp)):
+                  flag=False
+                  
+#检查新节点是否已经在open表中，如在将不添加
+                  for jj in range(len(opened)):
+#                        print('tmp[y][0]is',tmp[y][0])
+#                        print('opened[x][0]is',opened[x][0])
+
+#                        if tmp[y][0]==opened[jj][0]:
+#原有判断还不够精细，需要增加同等项6/7/8/9四个小卒组合位置相同的，也认为是同一局型。
+                        if(check_match（tmp[y][0],opened[jj][0]）==True):
+                            flag=True
+#                            print('falg opened set to True')
+
+
+#检查新节点是否已经在closed表中，如在将不添加
+                  for kk in range(len(closed)):
+#                         print('tmp[',y,'][0]is',tmp[y][0])
+#                         print('closed[',kk,'][0]is',closed[kk][0])
+
+#                         if tmp[y][0]==closed[kk][0]:
+#改为使用函数check_match
+                        if(check_match（tmp[y][0],closed[kk][0]）==True):
+                            flag=True
+#                                print('falg close set to True')
+                  if flag==False:
+                      max_nodeid = max_nodeid +1
+#统计分析的节点数量
+#                      if max_nodeid%50>=0 and max_nodeid%50 < 1:
+#                        print(int(max_nodeid/50)*50,'nodes get!')
+#                        print('已完成：',len(closed),'剩余:',len(opened))                      
+                      tmp[y][4]=max_nodeid
+                      opened.append(tmp[y])
+#                     print('新增节点',next_role, this_role, x, direct, max_nodeid, this_nodeid)
+#                      print('新增open节点', tmp[y][5],':----',tmp[y][2],'move',tmp[y][3],'---->',tmp[y][4])
+#                      tmp_pos=updatelocation(tmp[y][1])
+#                      prtresult(tmp_pos)
+#                      tmp_pos2=updatelocation(tmp[y][0])
+#                      prtresult(tmp_pos2)
+#                        print('add opened node',opened[-1])
+#                  else:
+#                        print('node',tmp[y][0], 'already exists in opened or closed!')
+
+#检查是否成功
+                  if(check_win(tmp[y])=="Success!"):
+                    closed.append(opened[x])
+                    closed.append(opened[-1])
+                    opened.remove(opened[x])
+#                    print('add close node',opened[x])
+                    print('Totally',max_nodeid,'nodes ayalyzed,find the result.')
+                    prtAnswer()
+                    print('Success!')
+                    exit("We find it!")
+          closed.append(opened[x])
+#          print(len(closed),'nodes closed!')
+#          print('add close node',opened[x][5])
+#          print('节点分析完毕，移入closed节点：', opened[x][4],'已完成：',len(closed),'剩余:',len(opened))
+          if len(closed)%200>=0 and len(closed)%200 < 1:
+              print('已完成：',len(closed),'剩余:',len(opened))   
+              tmp_pos=updatelocation(opened[x][0])
+              prtresult(tmp_pos)
+
+
+#打印结果，方法是从close表最后一条开始，查找其前一个节点，
+#直到前一节点为0，并将所有查到的序列写入step，打印出step
+#即得到所有的变化过程。
+def prtAnswer():
+      step=[closed[-1]]
+      nodePrt=closed[-1][4]
+      while True:
+            for x in range(len(closed)):
+                  if nodePrt==closed[x][3]:
+                        step.insert(0,closed[x])
+                        nodePrt=closed[x][4]
+            if nodePrt==0:
+                  break            
+      for x in range(len(step)):
+            print('Step',x,':')
+            prtNum(step[x][0])
+      print('Finished!')
+      time.sleep(10)
+  
 
 #主程序    
 #result=updatelocation(role)
@@ -380,9 +561,9 @@ while True:
     prtresult(result)
     print("\n\n")
     if(len(history)>1):
-        select = input('Target: Move Caocao--0000--block to exit\n Choose an item to move，x to exit, b to back: ')
+        select = input('Target: Move Caocao--0000--block to exit\n Choose an item to move，x to exit, b to back, a to autoplay: ')
     else:
-        select = input('Target: Move Caocao--0000--block to exit\n Choose an item to move，x to exit')
+        select = input('Target: Move Caocao--0000--block to exit\n Choose an item to move，x to exit, a to autoplay: ')
     if(select=='b' or select=='B'):
         if(len(history)>1):
             print('before:',history)
@@ -393,7 +574,7 @@ while True:
         else:
             print("\n cannot go back, please choose again")
     elif(select in "0123456789"):
-       direct = move_judge(int(select),role,result)
+       direct = move_judge(int(select),role)
        if(direct!=[]):
             role=move(int(select),role,direct,result)
             history.append(copy.deepcopy(role))
@@ -402,6 +583,10 @@ while True:
                 break
        else:
            print("\n cannot move, please choose again")
+    elif(select=='a' or select=='A'):
+        auto_play=True
+        autoplay(role)
+        break
     elif (select =='x' or select=='X'):
         print('good bye')
         break
