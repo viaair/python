@@ -4,6 +4,8 @@ import time
 import os
 import logging  # 引入logging模块
 import os.path
+loglevel = logging.INFO
+#loglevel = logging.DEBUG
 
 ##Author: Lijun 
 #
@@ -65,7 +67,7 @@ import os.path
 def init_log():   
     # 第一步，创建一个logger
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)  # Log等级总开关
+    logger.setLevel(loglevel)  # Log等级总开关
     # 第二步，创建一个handler，用于写入日志文件
     rq = time.strftime('%Y%m%d%H%M', time.localtime(time.time()))
     log_path = os.path.dirname(os.getcwd()) + '/Logs/'
@@ -319,9 +321,12 @@ def prtresult(resultx):
 def prtresult_str(role_to_str):
     print("\n")
     for i in range(5):
+        loginfo = ''
         for j in range(4):
             print(role_to_str[i*4+j],end='')
+            loginfo = loginfo + role_to_str[i*4+j] 
         print()
+        logging.info(loginfo)
 
 '''def prtmenu():
     while True:
@@ -656,13 +661,13 @@ def autoplay(role):
     orig_node = [copy.deepcopy(role),'','','',1,0,diff(copy.deepcopy(role))]
     opened.append(orig_node)
     logging.debug(u"初始节点插入open表")
-    logging.debug("".join(orig_node))
+    logging.debug("".join('%s' %idd for idd in orig_node))
 #    print('add to opened:',opened[-1])
 #添加到字典
     handleDict(orig_node)
     logging.debug(u"开始处理距离字典")
-    handleOpen()
     logging.debug(u"开始处理open表")
+    handleOpen()
 
 #A*算法，根据diff值将diff值小的内容插入到open表的前面，node的最后一项就是diff值
 def addOpen(node):
@@ -670,7 +675,7 @@ def addOpen(node):
     if(len(opened)==0 or node[6]>=opened[-1][6]):
         opened.append(node)
         logging.debug(u"节点追加到open表末尾")
-        logging.debug("".join(node))        
+        logging.debug("".join('%s' %idd for idd in node))        
 #        print('append opened',node)
 #        print('new opened is:',opened)
 #        result=updatelocation(node[0])
@@ -682,7 +687,7 @@ def addOpen(node):
 #                print('insert opened',node)
                 opened.insert(i,node)
                 logging.debug(u"节点插入open表"+str(i)+u"位置:")
-                logging.debug("".join(node))        
+                logging.debug("".join('%s' %idd for idd in node))        
                 break
 
 #A*算法，通过定义字典保存不同role距离初始role的步数距离,随时更新各role的最小距离，以帮助得到最短路径
@@ -976,22 +981,39 @@ def prtAnswerShort(oklist,distance):
     max_length = 999
     max_length_no = 999                        
     for i in range(len(oklist)):
-        print('Solution No.',i+1,':')
+        loginfo = 'Solution No.'+str(i+1)+':'
+        print(loginfo)
+        logging.info(loginfo)
         if(len(solution[i]) < max_length):
             max_length = len(solution[i])-1
             max_length_no = i+1
-        print('i,max_length,max_length_no are:',i, max_length,max_length_no)
+        loginfo = str(i)+'max_length, max_length_no are:'+str(max_length)+str(max_length_no)
+#        print('i,max_length,max_length_no are:',i, max_length,max_length_no)
+        print(loginfo)
+        logging.info(loginfo)
         for j in range(len(solution[i])):
-            print('\nStep',j,end='')
+            loginfo = 'Step'+str(j)
+#            print('\nStep',j,end='')
+            print('\n'+loginfo,end='' )
+            logging.info(loginfo)
             if(j==0):
                 print('(Begin)',end='')
+                logging.info('Begin')
             if(j==len(solution[i])-1):
                 print('(Final)')
+                logging.info('Final')
             if(j%5==0 or j==len(solution[i])-1):
                 prtresult_str(solution[i][j])
             if(j<len(solution[i])-1):
-                print('     ----',distance[solution[i][j+1]][2],'move', distance[solution[i][j+1]][3],'---->',end='')
-    print('Solution No.',max_length_no, 'is the shortest solution,totally',max_length,'steps!')   
+                loginfo = '     ----'+str(distance[solution[i][j+1]][2])+'move'+str(distance[solution[i][j+1]][3])+'---->'
+#                print('     ----',distance[solution[i][j+1]][2],'move', distance[solution[i][j+1]][3],'---->',end='')
+                print(loginfo, end='')
+                logging.info(loginfo)
+    loginfo = 'Solution No.'+ str(max_length_no) + 'is the shortest solution,totally' + str(max_length) + 'steps!'
+#    print('Solution No.',max_length_no, 'is the shortest solution,totally',max_length,'steps!')
+    print(loginfo)
+    logging.info(loginfo)
+
 
 #主程序    
 #result=updatelocation(role)
